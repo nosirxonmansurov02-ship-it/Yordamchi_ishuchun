@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijozlar va qarzlar</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --ink:#f2f1f6;
+    --ink-soft:#9c98ab;
+    --paper:#0a0a0c;
+    --card:#18181c;
+    --line:#2b2a31;
+    --line-strong:#403e49;
+    --blue:#6c8dff;
+    --blue-dark:#8fa6ff;
+    --blue-tint:#1c2340;
+    --green:#4fce80;
+    --green-tint:#15301f;
+    --red:#ff6b5e;
+    --red-tint:#3a1a18;
+    --radius:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 64px;}
+  header h1{font-size:27px;font-weight:800;margin:0 0 4px;letter-spacing:.3px;}
+  header p{font-size:13.5px;color:var(--ink-soft);margin:0;line-height:1.5;}
+
+  .not-telegram{
+    background:var(--red-tint);color:var(--red);border-radius:var(--radius);
+    padding:12px 14px;font-size:13.5px;margin-bottom:16px;display:none;line-height:1.5;
+  }
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .stat .label{font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+  .stat .val{font-size:18px;font-weight:700;}
+  .stat.warn .val{color:var(--red);}
+
+  .top-btns{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .products-btn{
+    flex:1 1 30%;padding:12px 8px;border-radius:var(--radius);border:1.5px solid #34c759;
+    background:#34c759;color:#062210;font-size:13.5px;font-weight:700;cursor:pointer;
+  }
+  .all-history-btn{
+    flex:1 1 30%;padding:12px 8px;border-radius:var(--radius);border:1.5px solid #4d7fff;
+    background:#4d7fff;color:#081026;font-size:13.5px;font-weight:700;cursor:pointer;
+  }
+
+  .product-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .product-row:last-child{border-bottom:none;}
+  .product-row .pname{font-size:14.5px;font-weight:600;}
+  .product-row .pprice{font-size:13.5px;color:var(--ink-soft);}
+  .product-row .pdel{
+    border:none;background:none;color:var(--red);font-size:18px;cursor:pointer;line-height:1;padding:4px 6px;
+  }
+  .product-row .prow-left{display:flex;align-items:center;gap:8px;}
+  .psettings{
+    border:none;background:var(--paper);color:var(--ink-soft);font-size:15px;cursor:pointer;line-height:1;
+    padding:6px 8px;border-radius:7px;flex-shrink:0;
+  }
+  .psettings:active{background:var(--line);}
+  .card-top .right-col{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .csettings{
+    border:none;background:var(--paper);color:var(--ink-soft);font-size:15px;cursor:pointer;line-height:1;
+    padding:5px 7px;border-radius:7px;
+  }
+  .csettings:active{background:var(--line);}
+  .btn-delete-full{
+    width:100%;margin-top:10px;padding:12px;border-radius:8px;border:1.5px solid var(--red);
+    background:var(--red-tint);color:var(--red);font-weight:600;cursor:pointer;font-size:15px;
+  }
+  .btn-delete-full:active{background:var(--red);color:#fff;}
+  .add-product-btn{
+    width:100%;padding:11px;border-radius:8px;border:1.5px dashed var(--line-strong);
+    background:var(--card);color:var(--blue);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:4px;
+  }
+
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .product-line{
+    border:1px solid var(--line);border-radius:10px;padding:12px 12px 4px;margin-bottom:10px;background:var(--card);
+  }
+  .removeLine{
+    border:none;background:none;color:var(--red);font-size:12.5px;font-weight:600;cursor:pointer;
+    padding:4px 0 10px;
+  }
+  .price-input{position:relative;}
+  .price-input .dollar{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-weight:600;font-size:15px;pointer-events:none;
+  }
+  .price-input input{padding-left:26px !important;}
+  .total-line{
+    display:flex;justify-content:space-between;align-items:center;background:var(--blue-tint);
+    border-radius:8px;padding:10px 12px;margin-top:2px;margin-bottom:14px;font-size:14.5px;
+  }
+  .total-line .tval{font-weight:700;color:var(--blue-dark);font-size:16px;}
+
+  .search-row{display:flex;gap:8px;margin:0 0 10px;}
+  .search-row input{
+    flex:1;padding:11px 14px;border:1.5px solid var(--line-strong);border-radius:var(--radius);
+    font-size:15px;background:var(--card);color:var(--ink);
+  }
+  .search-row input:focus{outline:none;border-color:var(--blue);}
+  .add-btn{
+    background:var(--blue);color:#fff;border:none;border-radius:var(--radius);
+    padding:0 18px;font-size:20px;font-weight:600;cursor:pointer;line-height:1;
+  }
+  .add-btn:active{background:var(--blue-dark);}
+
+  .count-line{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 15px;margin-bottom:10px;
+  }
+  .card.overdue{border-color:var(--red);border-width:1.5px;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card .name{font-size:16px;font-weight:700;margin:0 0 2px;}
+  .card .sub{font-size:12.5px;color:var(--ink-soft);}
+  .card .debt{font-size:17px;font-weight:700;text-align:right;white-space:nowrap;}
+  .card .debt.zero{color:var(--green);}
+  .card .debt.pos{color:var(--red);}
+  .overdue-tag{
+    display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--red);
+    background:var(--red-tint);padding:2px 8px;border-radius:6px;
+  }
+  .card-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .card-actions button{
+    flex:1;min-width:90px;padding:9px 10px;border-radius:8px;border:1.5px solid var(--line-strong);
+    background:var(--card);font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink);
+  }
+  .card-actions button.msg{border-color:#ff9a3c;color:#ffa94d;background:#3a2510;}
+  .card-actions button.hist{color:var(--ink-soft);}
+
+  .history{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;display:none;}
+  .history.open{display:block;}
+  .history-item{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .history-item .t{color:var(--ink-soft);}
+  .history-item .a.purchase{color:var(--red);}
+  .history-item .a.payment{color:var(--green);}
+  .history-empty{font-size:13px;color:var(--ink-soft);}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:14px;}
+  .empty .big{font-size:30px;margin-bottom:8px;}
+
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,18,30,.4);
+    align-items:flex-end;justify-content:center;z-index:10;
+  }
+  .overlay.open{display:flex;}
+  .sheet{
+    background:var(--paper);width:100%;max-width:640px;border-radius:16px 16px 0 0;
+    padding:20px 18px 24px;max-height:85vh;overflow-y:auto;
+  }
+  .sheet h2{font-size:17px;margin:0 0 14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+  .field input{
+    width:100%;padding:10px 12px;border:1.5px solid var(--line-strong);border-radius:8px;
+    font-size:15px;font-family:inherit;background:var(--card);color:var(--ink);
+  }
+  .field input:focus{outline:none;border-color:var(--blue);}
+  .err{color:var(--red);font-size:12.5px;margin-top:4px;display:none;}
+  .sheet-actions{display:flex;gap:10px;margin-top:16px;}
+  .sheet-actions button{flex:1;padding:12px;border-radius:8px;font-size:15px;font-weight:600;border:none;cursor:pointer;}
+  .btn-cancel{background:var(--card);color:var(--ink);border:1.5px solid var(--line-strong) !important;}
+  .btn-save{background:var(--blue);color:#fff;}
+  .btn-save:active{background:var(--blue-dark);}
+
+  .today-empty{font-size:13.5px;color:var(--ink-soft);text-align:center;padding:20px 0;}
+
+  .all-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .all-row:last-child{border-bottom:none;}
+  .all-row .who{font-size:14px;font-weight:600;}
+  .all-row .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .all-row .amt{font-size:14px;font-weight:600;white-space:nowrap;}
+  .all-row .amt.purchase{color:var(--red);}
+  .all-row .amt.payment{color:var(--green);}
+
+  .status{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>YORDAMCHI</h1>
+  </header>
+
+  <div class="not-telegram" id="notTelegram">
+    Bu sahifa Telegram ilovasi ichida ochilganda ma'lumotni Telegram xotirasida saqlaydi. Hozir brauzerda ochilgani uchun ma'lumot vaqtinchalik bo'ladi — botdagi "Open app" tugmasi orqali oching.
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">Jami qarzdorlik</div><div class="val" id="statTotalDebt">0</div></div>
+    <div class="stat warn"><div class="label">Muddati o'tganlar</div><div class="val" id="statOverdue">0</div></div>
+  </div>
+
+  <div class="top-btns">
+    <button class="products-btn" id="openProducts">Tovarlar</button>
+    <button class="all-history-btn" id="openAllHistory">Barcha jarayon</button>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Mijoz ismini qidiring...">
+    <button class="add-btn" id="openAddClient" aria-label="Yangi mijoz">+</button>
+  </div>
+
+  <div class="count-line" id="countLine"></div>
+  <div id="list"></div>
+</div>
+
+<div class="overlay" id="overlayClient">
+  <div class="sheet">
+    <h2>Yangi mijoz qo'shish</h2>
+    <div class="field">
+      <label>Ism *</label>
+      <input type="text" id="fName" placeholder="Mijoz ismi">
+      <div class="err" id="errName">Ismni kiriting</div>
+    </div>
+    <div class="field">
+      <label>Telefon (ixtiyoriy, WhatsApp xabar uchun)</label>
+      <input type="tel" id="fPhone" placeholder="+998901234567">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelClient">Bekor qilish</button>
+      <button class="btn-save" id="saveClient">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayProducts">
+  <div class="sheet">
+    <h2>Tovarlar</h2>
+    <button class="add-product-btn" id="openAddProduct">+ Yangi mahsulot qo'shish</button>
+    <div id="productList"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="closeProducts">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayAddProduct">
+  <div class="sheet">
+    <h2>Yangi mahsulot</h2>
+    <div class="field">
+      <label>Mahsulot nomi *</label>
+      <input type="text" id="pName" placeholder="Masalan: Vint M6">
+      <div class="err" id="errPName">Nomini kiriting</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelAddProduct">Bekor qilish</button>
+      <button class="btn-save" id="saveProduct">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayEditProduct">
+  <div class="sheet">
+    <h2>Mahsulotni tahrirlash</h2>
+    <div class="field">
+      <label>Mahsulot nomi *</label>
+      <input type="text" id="epName" placeholder="Masalan: Vint M6">
+      <div class="err" id="errEpName">Nomini kiriting</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelEditProduct">Bekor qilish</button>
+      <button class="btn-save" id="saveEditProduct">Saqlash</button>
+    </div>
+    <button class="btn-delete-full" id="deleteProduct">Mahsulotni o'chirish</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayEditClient">
+  <div class="sheet">
+    <h2>Mijozni tahrirlash</h2>
+    <div class="field">
+      <label>Ism *</label>
+      <input type="text" id="ecName" placeholder="Mijoz ismi">
+      <div class="err" id="errEcName">Ismni kiriting</div>
+    </div>
+    <div class="field">
+      <label>Telefon (ixtiyoriy, WhatsApp xabar uchun)</label>
+      <input type="tel" id="ecPhone" placeholder="+998901234567">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelEditClient">Bekor qilish</button>
+      <button class="btn-save" id="saveEditClient">Saqlash</button>
+    </div>
+    <button class="btn-delete-full" id="deleteClient">Mijozni o'chirish</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayTx">
+  <div class="sheet">
+    <h2 id="txTitle">Amal qo'shish</h2>
+
+    <div id="purchaseFields">
+      <div id="productLines"></div>
+      <datalist id="productDatalist"></datalist>
+      <button type="button" class="add-product-btn" id="addProductLine">+ Yana mahsulot qo'shish</button>
+      <div class="total-line">
+        <span>Jami summa</span>
+        <span class="tval" id="txTotalVal">0</span>
+      </div>
+    </div>
+
+    <div class="field" id="paymentFieldWrap">
+      <label>Summa ($) *</label>
+      <input type="number" id="fAmount" placeholder="Masalan: 150000">
+      <div class="err" id="errAmount">Summani kiriting</div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelTx">Bekor qilish</button>
+      <button class="btn-save" id="saveTx">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayAllHistory">
+  <div class="sheet">
+    <h2>Barcha jarayon</h2>
+    <div id="allHistoryList"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="closeAllHistory">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<div class="status" id="status"></div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if(tg){
+  tg.ready();
+  tg.expand();
+}else{
+  document.getElementById('notTelegram').style.display = 'block';
+}
+
+/* ---------- Cloud storage layer (falls back to localStorage outside Telegram) ---------- */
+function csSet(key, value){
+  return new Promise((resolve, reject)=>{
+    if(tg){
+      tg.CloudStorage.setItem(key, value, (err, ok)=> err ? reject(err) : resolve(ok));
+    }else{
+      try{ localStorage.setItem(key, value); resolve(true); }catch(e){ reject(e); }
+    }
+  });
+}
+function csGetItems(keys){
+  return new Promise((resolve, reject)=>{
+    if(keys.length===0){ resolve({}); return; }
+    if(tg){
+      tg.CloudStorage.getItems(keys, (err, values)=> err ? reject(err) : resolve(values||{}));
+    }else{
+      const out = {};
+      keys.forEach(k=> out[k] = localStorage.getItem(k) || '');
+      resolve(out);
+    }
+  });
+}
+function csGetItem(key){
+  return new Promise((resolve, reject)=>{
+    if(tg){
+      tg.CloudStorage.getItem(key, (err, value)=> err ? reject(err) : resolve(value||''));
+    }else{
+      resolve(localStorage.getItem(key) || '');
+    }
+  });
+}
+function csRemove(key){
+  return new Promise((resolve, reject)=>{
+    if(tg){
+      tg.CloudStorage.removeItem(key, (err, ok)=> err ? reject(err) : resolve(ok));
+    }else{
+      localStorage.removeItem(key); resolve(true);
+    }
+  });
+}
+
+/* ---------- App data ---------- */
+let clients = [];       // {id, name, phone, createdAt}
+let txByClient = {};    // clientId -> [{type, amount, date, ts, productName, qty, unitPrice}]
+let products = [];      // {id, name}
+let currentTxClientId = null;
+let currentTxType = null;
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmt(n){
+  return "$" + Math.round(n).toLocaleString('fr-FR').replace(/,/g,' ');
+}
+function todayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+function daysBetween(d1, d2){
+  return Math.floor((new Date(d2) - new Date(d1)) / 86400000);
+}
+
+async function loadData(){
+  const statusEl = document.getElementById('status');
+  try{
+    const idxRaw = await csGetItem('idx');
+    const ids = idxRaw ? JSON.parse(idxRaw) : [];
+    const prodRaw = await csGetItem('products');
+    products = prodRaw ? JSON.parse(prodRaw) : [];
+
+    if(ids.length===0){ clients = []; txByClient = {}; render(); return; }
+
+    const keys = [];
+    ids.forEach(id=>{ keys.push('c_'+id); keys.push('tx_'+id); });
+    const values = await csGetItems(keys);
+
+    clients = [];
+    txByClient = {};
+    ids.forEach(id=>{
+      const cRaw = values['c_'+id];
+      const tRaw = values['tx_'+id];
+      if(cRaw){ clients.push(JSON.parse(cRaw)); }
+      txByClient[id] = tRaw ? JSON.parse(tRaw) : [];
+    });
+  }catch(e){
+    statusEl.textContent = "Ma'lumotni yuklashda xatolik yuz berdi.";
+    clients = []; txByClient = {}; products = [];
+  }
+  render();
+}
+
+async function saveIndex(){
+  await csSet('idx', JSON.stringify(clients.map(c=>c.id)));
+}
+async function saveClientRecord(client){
+  await csSet('c_'+client.id, JSON.stringify(client));
+}
+async function saveClientTx(clientId){
+  const statusEl = document.getElementById('status');
+  try{
+    await csSet('tx_'+clientId, JSON.stringify(txByClient[clientId] || []));
+  }catch(e){
+    statusEl.textContent = "Tarix hajmi chegaraga yetdi — eski yozuvlarni arxivlash kerak bo'lishi mumkin.";
+  }
+}
+async function saveProducts(){
+  await csSet('products', JSON.stringify(products));
+}
+
+function renderProductList(){
+  const el = document.getElementById('productList');
+  if(products.length===0){
+    el.innerHTML = '<div class="history-empty">Hali mahsulot qo\'shilmagan.</div>';
+    return;
+  }
+  el.innerHTML = products.map(p=>`
+    <div class="product-row" data-id="${p.id}">
+      <div class="pname">${esc(p.name)}</div>
+      <button class="psettings" data-id="${p.id}" aria-label="Sozlash">⚙</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.psettings').forEach(b=> b.addEventListener('click', ()=> openEditProduct(b.dataset.id)));
+}
+
+let currentEditProductId = null;
+const overlayEditProduct = document.getElementById('overlayEditProduct');
+function openEditProduct(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  currentEditProductId = id;
+  document.getElementById('epName').value = p.name;
+  document.getElementById('errEpName').style.display='none';
+  overlayEditProduct.classList.add('open');
+}
+document.getElementById('cancelEditProduct').addEventListener('click', ()=> overlayEditProduct.classList.remove('open'));
+overlayEditProduct.addEventListener('click', e=>{ if(e.target===overlayEditProduct) overlayEditProduct.classList.remove('open'); });
+
+document.getElementById('saveEditProduct').addEventListener('click', async ()=>{
+  const name = document.getElementById('epName').value.trim();
+  if(!name){ document.getElementById('errEpName').style.display='block'; return; }
+  document.getElementById('errEpName').style.display='none';
+  const p = products.find(x=>x.id===currentEditProductId);
+  if(p) p.name = name;
+  overlayEditProduct.classList.remove('open');
+  renderProductList();
+  await saveProducts();
+});
+
+document.getElementById('deleteProduct').addEventListener('click', async ()=>{
+  products = products.filter(p=>p.id!==currentEditProductId);
+  overlayEditProduct.classList.remove('open');
+  renderProductList();
+  await saveProducts();
+});
+
+function fillProductDatalist(){
+  const dl = document.getElementById('productDatalist');
+  dl.innerHTML = products.map(p=>`<option value="${esc(p.name)}"></option>`).join('');
+}
+
+function updateTxTotal(){
+  let total = 0;
+  document.querySelectorAll('#productLines .product-line').forEach(l=>{
+    const qty = Number(l.querySelector('.lQty').value) || 0;
+    const price = Number(l.querySelector('.lUnitPrice').value) || 0;
+    total += qty * price;
+  });
+  document.getElementById('txTotalVal').textContent = fmt(total);
+}
+
+function clientDebt(clientId){
+  return (txByClient[clientId]||[]).reduce((sum,t)=> sum + (t.type==='purchase' ? t.amount : -t.amount), 0);
+}
+function lastPaymentInfo(clientId){
+  const payments = (txByClient[clientId]||[]).filter(t=>t.type==='payment');
+  if(payments.length===0){
+    const client = clients.find(c=>c.id===clientId);
+    return { date: client ? client.createdAt : todayStr(), never: true };
+  }
+  payments.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  return { date: payments[0].date, never: false };
+}
+function clientHistory(clientId){
+  return (txByClient[clientId]||[]).slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+}
+
+function renderStats(){
+  const totalDebt = clients.reduce((s,c)=> s + Math.max(0, clientDebt(c.id)), 0);
+  let overdueCount = 0;
+  clients.forEach(c=>{
+    const debt = clientDebt(c.id);
+    const lp = lastPaymentInfo(c.id);
+    if(debt > 0 && daysBetween(lp.date, todayStr()) >= 15) overdueCount++;
+  });
+  document.getElementById('statTotalDebt').textContent = fmt(totalDebt);
+  document.getElementById('statOverdue').textContent = overdueCount;
+}
+
+function render(){
+  renderStats();
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const list = document.getElementById('list');
+  const countLine = document.getElementById('countLine');
+
+  let filtered = clients.filter(c => !q || c.name.toLowerCase().includes(q));
+
+  filtered = filtered.map(c=>{
+    const debt = clientDebt(c.id);
+    const lp = lastPaymentInfo(c.id);
+    const days = daysBetween(lp.date, todayStr());
+    const overdue = debt > 0 && days >= 15;
+    return {...c, debt, lastPaymentDays: days, lastPaymentNever: lp.never, overdue};
+  }).sort((a,b)=>{
+    if(a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+    return b.debt - a.debt;
+  });
+
+  countLine.textContent = clients.length
+    ? (q ? `${filtered.length} ta natija` : `Jami ${clients.length} ta mijoz`)
+    : '';
+
+  if(filtered.length===0){
+    list.innerHTML = `<div class="empty">
+      <div class="big">👥</div>
+      ${clients.length===0
+        ? "Hali mijoz yo'q. + tugmasi orqali birinchi mijozni qo'shing."
+        : "Hech kim topilmadi."}
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => `
+    <div class="card ${c.overdue?'overdue':''}" data-id="${c.id}">
+      <div class="card-top">
+        <div>
+          <p class="name">${esc(c.name)}</p>
+          <p class="sub">${c.phone ? esc(c.phone) : 'Telefon kiritilmagan'}</p>
+          ${c.overdue ? `<span class="overdue-tag">${c.lastPaymentNever ? 'Hali to\'lov bo\'lmagan' : c.lastPaymentDays + ' kundan beri to\'lov yo\'q'}</span>` : ''}
+        </div>
+        <div class="right-col">
+          <button class="csettings" data-id="${c.id}" aria-label="Sozlash">⚙</button>
+          <div class="debt ${c.debt>0?'pos':'zero'}">${c.debt>0 ? fmt(c.debt) : "Qarzi yo'q"}</div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="purchase-btn" data-id="${c.id}">+ Tovar berildi</button>
+        <button class="payment-btn" data-id="${c.id}">+ Pul qabul qilindi</button>
+        <button class="hist-btn" data-id="${c.id}">Tarix</button>
+        ${c.phone ? `<button class="msg" data-id="${c.id}">Eslatma yuborish</button>` : ''}
+      </div>
+      <div class="history" id="hist-${c.id}"></div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.purchase-btn').forEach(b=> b.addEventListener('click', ()=> openTx(b.dataset.id, 'purchase')));
+  list.querySelectorAll('.payment-btn').forEach(b=> b.addEventListener('click', ()=> openTx(b.dataset.id, 'payment')));
+  list.querySelectorAll('.msg').forEach(b=> b.addEventListener('click', ()=> sendReminder(b.dataset.id)));
+  list.querySelectorAll('.hist-btn').forEach(b=> b.addEventListener('click', ()=> toggleHistory(b.dataset.id)));
+  list.querySelectorAll('.csettings').forEach(b=> b.addEventListener('click', ()=> openEditClient(b.dataset.id)));
+}
+
+let currentEditClientId = null;
+const overlayEditClient = document.getElementById('overlayEditClient');
+function openEditClient(id){
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  currentEditClientId = id;
+  document.getElementById('ecName').value = c.name;
+  document.getElementById('ecPhone').value = c.phone || '';
+  document.getElementById('errEcName').style.display='none';
+  overlayEditClient.classList.add('open');
+}
+document.getElementById('cancelEditClient').addEventListener('click', ()=> overlayEditClient.classList.remove('open'));
+overlayEditClient.addEventListener('click', e=>{ if(e.target===overlayEditClient) overlayEditClient.classList.remove('open'); });
+
+document.getElementById('saveEditClient').addEventListener('click', async ()=>{
+  const name = document.getElementById('ecName').value.trim();
+  const phone = document.getElementById('ecPhone').value.trim();
+  if(!name){ document.getElementById('errEcName').style.display='block'; return; }
+  document.getElementById('errEcName').style.display='none';
+  const c = clients.find(x=>x.id===currentEditClientId);
+  if(c){ c.name = name; c.phone = phone; }
+  overlayEditClient.classList.remove('open');
+  render();
+  if(c) await saveClientRecord(c);
+});
+
+document.getElementById('deleteClient').addEventListener('click', async ()=>{
+  const id = currentEditClientId;
+  if(!id) return;
+  clients = clients.filter(c=>c.id!==id);
+  delete txByClient[id];
+  overlayEditClient.classList.remove('open');
+  render();
+  await saveIndex();
+  await csRemove('c_'+id);
+  await csRemove('tx_'+id);
+});
+
+function toggleHistory(clientId){
+  const el = document.getElementById('hist-'+clientId);
+  const isOpen = el.classList.contains('open');
+  if(isOpen){ el.classList.remove('open'); return; }
+  const hist = clientHistory(clientId);
+  el.innerHTML = hist.length
+    ? hist.map(t=>`
+      <div class="history-item">
+        <span class="t">${t.date}${t.type==='purchase' && t.productName ? ` — ${esc(t.productName)} × ${t.qty}` : ''}</span>
+        <span class="a ${t.type}">${t.type==='purchase' ? '+' : '-'} ${fmt(t.amount)}</span>
+      </div>
+    `).join('')
+    : '<div class="history-empty">Hali tranzaksiya yo\'q</div>';
+  el.classList.add('open');
+}
+
+function sendReminder(clientId){
+  const c = clients.find(x=>x.id===clientId);
+  if(!c || !c.phone) return;
+  const debt = clientDebt(clientId);
+  const phone = c.phone.replace(/[^0-9]/g,'');
+  const text = `Assalomu alaykum, ${c.name}. Sizning ${fmt(debt)} qarzingiz bo'yicha to'lov kutib qolmoqdamiz. Iltimos imkon qadar tezroq to'lovni amalga oshirsangiz. Rahmat!`;
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  if(tg) tg.openLink(url); else window.open(url, '_blank');
+}
+
+document.getElementById('search').addEventListener('input', render);
+
+/* ---------- Products ---------- */
+const overlayProducts = document.getElementById('overlayProducts');
+document.getElementById('openProducts').addEventListener('click', ()=>{
+  renderProductList();
+  overlayProducts.classList.add('open');
+});
+document.getElementById('closeProducts').addEventListener('click', ()=> overlayProducts.classList.remove('open'));
+overlayProducts.addEventListener('click', e=>{ if(e.target===overlayProducts) overlayProducts.classList.remove('open'); });
+
+const overlayAddProduct = document.getElementById('overlayAddProduct');
+document.getElementById('openAddProduct').addEventListener('click', ()=>{
+  document.getElementById('pName').value='';
+  document.getElementById('errPName').style.display='none';
+  overlayAddProduct.classList.add('open');
+});
+document.getElementById('cancelAddProduct').addEventListener('click', ()=> overlayAddProduct.classList.remove('open'));
+overlayAddProduct.addEventListener('click', e=>{ if(e.target===overlayAddProduct) overlayAddProduct.classList.remove('open'); });
+
+document.getElementById('saveProduct').addEventListener('click', async ()=>{
+  const name = document.getElementById('pName').value.trim();
+  if(!name){ document.getElementById('errPName').style.display='block'; return; }
+  document.getElementById('errPName').style.display='none';
+  products.push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,7), name });
+  overlayAddProduct.classList.remove('open');
+  renderProductList();
+  await saveProducts();
+});
+
+const overlayClient = document.getElementById('overlayClient');
+document.getElementById('openAddClient').addEventListener('click', ()=>{
+  document.getElementById('fName').value='';
+  document.getElementById('fPhone').value='';
+  document.getElementById('errName').style.display='none';
+  overlayClient.classList.add('open');
+});
+document.getElementById('cancelClient').addEventListener('click', ()=> overlayClient.classList.remove('open'));
+overlayClient.addEventListener('click', e=>{ if(e.target===overlayClient) overlayClient.classList.remove('open'); });
+
+document.getElementById('saveClient').addEventListener('click', async ()=>{
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  if(!name){ document.getElementById('errName').style.display='block'; return; }
+  document.getElementById('errName').style.display='none';
+  const client = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    name, phone,
+    createdAt: todayStr()
+  };
+  clients.push(client);
+  txByClient[client.id] = [];
+  overlayClient.classList.remove('open');
+  render();
+  await saveClientRecord(client);
+  await saveIndex();
+});
+
+const overlayTx = document.getElementById('overlayTx');
+let productLineSeq = 0;
+
+function productLineTemplate(id){
+  return `
+  <div class="product-line" data-line="${id}">
+    <div class="field">
+      <label>Mahsulot</label>
+      <input type="text" class="lProductName" list="productDatalist" placeholder="Qidirish yoki yozish...">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Soni *</label>
+        <input type="number" class="lQty" placeholder="1" min="1">
+        <div class="err lErrQty">Sonini kiriting</div>
+      </div>
+      <div class="field price-input">
+        <label>Narxi (dona) *</label>
+        <span class="dollar">$</span>
+        <input type="number" class="lUnitPrice" placeholder="0">
+        <div class="err lErrPrice">Narxini kiriting</div>
+      </div>
+    </div>
+    <button type="button" class="removeLine" data-line="${id}">✕ Bu mahsulotni olib tashlash</button>
+  </div>`;
+}
+
+function wireProductLine(lineEl){
+  lineEl.querySelector('.lQty').addEventListener('input', updateTxTotal);
+  lineEl.querySelector('.lUnitPrice').addEventListener('input', updateTxTotal);
+  lineEl.querySelector('.removeLine').addEventListener('click', ()=>{
+    lineEl.remove();
+    updateTxTotal();
+    updateRemoveButtonsVisibility();
+  });
+}
+
+function updateRemoveButtonsVisibility(){
+  const lines = document.querySelectorAll('#productLines .product-line');
+  lines.forEach(l=>{
+    l.querySelector('.removeLine').style.display = lines.length>1 ? 'block' : 'none';
+  });
+}
+
+function addProductLine(){
+  productLineSeq++;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = productLineTemplate(productLineSeq);
+  const lineEl = wrap.firstElementChild;
+  document.getElementById('productLines').appendChild(lineEl);
+  wireProductLine(lineEl);
+  updateRemoveButtonsVisibility();
+  updateTxTotal();
+}
+document.getElementById('addProductLine').addEventListener('click', addProductLine);
+
+function openTx(clientId, type){
+  currentTxClientId = clientId;
+  currentTxType = type;
+  document.getElementById('txTitle').textContent = type==='purchase' ? "Tovar berildi" : "Pul qabul qilindi";
+
+  const isPurchase = type==='purchase';
+  document.getElementById('purchaseFields').style.display = isPurchase ? 'block' : 'none';
+  document.getElementById('paymentFieldWrap').style.display = isPurchase ? 'none' : 'block';
+
+  if(isPurchase){
+    fillProductDatalist();
+    document.getElementById('productLines').innerHTML = '';
+    productLineSeq = 0;
+    addProductLine();
+    updateTxTotal();
+  }else{
+    document.getElementById('fAmount').value='';
+    document.getElementById('errAmount').style.display='none';
+  }
+  overlayTx.classList.add('open');
+}
+document.getElementById('cancelTx').addEventListener('click', ()=> overlayTx.classList.remove('open'));
+overlayTx.addEventListener('click', e=>{ if(e.target===overlayTx) overlayTx.classList.remove('open'); });
+
+document.getElementById('saveTx').addEventListener('click', async ()=>{
+  if(!txByClient[currentTxClientId]) txByClient[currentTxClientId] = [];
+
+  if(currentTxType==='purchase'){
+    const lines = document.querySelectorAll('#productLines .product-line');
+    let ok = true;
+    const items = [];
+    lines.forEach(l=>{
+      const qty = Number(l.querySelector('.lQty').value);
+      const unitPrice = Number(l.querySelector('.lUnitPrice').value);
+      const errQty = l.querySelector('.lErrQty');
+      const errPrice = l.querySelector('.lErrPrice');
+      let lineOk = true;
+      if(!qty || qty<=0){ errQty.style.display='block'; lineOk=false; } else errQty.style.display='none';
+      if(!unitPrice || unitPrice<=0){ errPrice.style.display='block'; lineOk=false; } else errPrice.style.display='none';
+      if(!lineOk){ ok=false; return; }
+      items.push({ productName: l.querySelector('.lProductName').value.trim(), qty, unitPrice });
+    });
+    if(!ok) return;
+
+    const baseTs = Date.now();
+    let productsChanged = false;
+    items.forEach((it, i)=>{
+      const entry = {
+        type: 'purchase',
+        amount: it.qty * it.unitPrice,
+        date: todayStr(),
+        ts: baseTs + i,
+        productName: it.productName || null,
+        qty: it.qty, unitPrice: it.unitPrice
+      };
+      txByClient[currentTxClientId].push(entry);
+
+      if(it.productName && !products.some(p=>p.name.toLowerCase()===it.productName.toLowerCase())){
+        products.push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,7)+i, name: it.productName });
+        productsChanged = true;
+      }
+    });
+    if(productsChanged) await saveProducts();
+  }else{
+    const amount = Number(document.getElementById('fAmount').value);
+    if(!amount || amount<=0){ document.getElementById('errAmount').style.display='block'; return; }
+    document.getElementById('errAmount').style.display='none';
+    const entry = { type: 'payment', amount, date: todayStr(), ts: Date.now() };
+    txByClient[currentTxClientId].push(entry);
+  }
+
+  overlayTx.classList.remove('open');
+  render();
+  await saveClientTx(currentTxClientId);
+});
+
+const overlayAllHistory = document.getElementById('overlayAllHistory');
+document.getElementById('openAllHistory').addEventListener('click', ()=>{
+  const nameOf = id => { const c = clients.find(x=>x.id===id); return c ? c.name : "Noma'lum"; };
+  let all = [];
+  Object.keys(txByClient).forEach(id=>{
+    (txByClient[id]||[]).forEach(t=> all.push({...t, clientId:id}));
+  });
+  all.sort((a,b)=> b.ts - a.ts);
+
+  const el = document.getElementById('allHistoryList');
+  if(all.length===0){
+    el.innerHTML = '<div class="today-empty">Hali hech qanday jarayon bo\'lmagan.</div>';
+  }else{
+    el.innerHTML = all.map(t=>{
+      const d = new Date(t.ts);
+      const time = d.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
+      const label = t.type==='purchase' ? 'Tovar oldi' : 'To\'lov qildi';
+      const prod = t.type==='purchase' && t.productName ? ` — ${esc(t.productName)} × ${t.qty}` : '';
+      return `<div class="all-row">
+        <div>
+          <div class="who">${esc(nameOf(t.clientId))}${prod}</div>
+          <div class="meta">${label} · ${t.date} ${time}</div>
+        </div>
+        <div class="amt ${t.type}">${t.type==='purchase' ? '+' : '-'} ${fmt(t.amount)}</div>
+      </div>`;
+    }).join('');
+  }
+  overlayAllHistory.classList.add('open');
+});
+document.getElementById('closeAllHistory').addEventListener('click', ()=> overlayAllHistory.classList.remove('open'));
+overlayAllHistory.addEventListener('click', e=>{ if(e.target===overlayAllHistory) overlayAllHistory.classList.remove('open'); });
+
+loadData();
+</script>
+</body>
+</html>
